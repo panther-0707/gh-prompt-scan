@@ -1,84 +1,75 @@
 import yaml
 from pathlib import Path
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-
-# A single step inside a job
-# e.g. "- run: pytest" or "- uses: actions/checkout@v4"
 @dataclass
 class WorkflowStep:
     name: str
-    uses: str | None        # which action this step calls (if any)
-    run: str | None         # shell command (if any)
-    env: dict               # environment variables
-    with_inputs: dict       # inputs passed to an action
-    if_condition: str | None  # optional condition like "if: github.actor == 'bot'"
+    run: str | None
+    uses: str | None
+    env: dict
 
-
-# A job is a group of steps
-# e.g. the "build" job or the "test" job
 @dataclass
 class WorkflowJob:
     name: str
     steps: list[WorkflowStep]
-    if_condition: str | None
     permissions: dict
+    if_condition: str | None
 
-
-# The whole workflow file
 @dataclass
 class Workflow:
     path: Path
     name: str
-    triggers: dict       # the "on:" block — what fires this workflow
-    permissions: dict    # what the workflow is allowed to do
+    triggers: dict
+    permissions: dict
     jobs: dict[str, WorkflowJob]
 
 
 def parse_workflow(path: Path) -> Workflow | None:
-    """
-    Read a workflow YAML file and return a Workflow object.
-    Returns None if the file can't be parsed.
-    """
     try:
-        # Open the file and parse the YAML into a Python dictionary
-        with open(path) as f:
-            raw = yaml.safe_load(f)
 
-        # If the file is empty or not a dictionary, skip it
-        if not isinstance(raw, dict):
-            return None
+        # Extract the object of the yaml
 
-        # Parse each job and its steps
+        with open(path) as file:
+            content = yaml.safe_load(file)
+        
+        name = content.get("name")
+        triggers = content.get(True) or content.get("on")
+        permissions = content.get("permissions") or {}
+        jobs = content.get("jobs")
+
+
+        # Extract jobs and steps
+
         jobs = {}
-        for job_name, job_data in (raw.get("jobs") or {}).items():
-            
+
+        for job_name, job_info in content.get("jobs").items():
             steps = []
-            for step in (job_data.get("steps") or []):
+            for step in job_info.get("steps"):
                 steps.append(WorkflowStep(
                     name=step.get("name", ""),
-                    uses=step.get("uses"),
                     run=step.get("run"),
+                    uses=step.get("uses"),
                     env=step.get("env") or {},
-                    with_inputs=step.get("with") or {},
-                    if_condition=step.get("if"),
                 ))
-
+            
             jobs[job_name] = WorkflowJob(
                 name=job_name,
                 steps=steps,
-                if_condition=job_data.get("if"),
-                permissions=job_data.get("permissions") or {},
+                permissions=job_info.get("permissions") or {},
+                if_condition=job_info.get("if"),
             )
 
-        return Workflow(
-            path=path,
-            name=raw.get("name", str(path)),
-            triggers=raw.get(True) or raw.get("on") or {},
-            permissions=raw.get("permissions") or {},
-            jobs=jobs,
-        )
 
-    except Exception:
-        # If anything goes wrong just skip this file
+        return Workflow(
+            path = path,
+            name = name,
+            triggers = triggers,
+            permissions = permissions,
+            jobs = jobs,
+        )
+    
+
+    except:
         return None
+    
