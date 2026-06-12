@@ -1,0 +1,10 @@
+name: Issue Handler
+on:
+  issues:
+    types: [opened]
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print issue
+        run: echo "${{ github.event.issue.body }}"
