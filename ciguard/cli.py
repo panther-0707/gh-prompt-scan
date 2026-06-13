@@ -13,7 +13,13 @@ def main():
 
 @main.command()
 @click.option("--path", default=".", help="Path to repo")
-def scan(path):
+@click.option(
+    "--fail-on",
+    type=click.Choice(["critical", "high", "medium", "none"]),
+    default="medium",
+    help="Minimum severity that causes exit code 1",
+)
+def scan(path, fail_on):
     workflow_files = find_workflows(path)
 
     if not workflow_files:
@@ -33,10 +39,16 @@ def scan(path):
     reporter = Reporter(all_findings)
     click.echo(reporter.to_text())
 
-    if all_findings:
-        sys.exit(1)
+    severity_rank = {"critical": 0, "high": 1, "medium": 2, "none": 99}
+    severity_map = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2}
+    threshold = severity_rank[fail_on]
 
+    for f in all_findings:
+        if severity_map.get(f.severity, 99) <= threshold:
+            sys.exit(1)
 
 @main.command()
 def version():
     click.echo("gh-prompt-scan version 0.1.1")
+
+
