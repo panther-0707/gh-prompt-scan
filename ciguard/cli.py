@@ -49,6 +49,6 @@ def scan(path, fail_on):
 
 @main.command()
 def version():
-    click.echo("gh-prompt-scan version 0.1.1")
+    click.echo("gh-prompt-scan version 0.1.4")
 
 
