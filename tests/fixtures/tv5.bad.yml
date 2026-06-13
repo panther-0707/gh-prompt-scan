@@ -1,0 +1,14 @@
+name: Vulnerable TV5
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call AI
+        uses: anthropics/claude-code-action@v1
+        with:
+          prompt: "Summarise: ${{ github.event.comment.body }}"
+      - name: Run AI output
+        run: echo "${{ steps.call-ai.outputs.response }}"

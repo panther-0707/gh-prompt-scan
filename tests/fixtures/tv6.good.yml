@@ -1,0 +1,12 @@
+name: Safe TV6
+on:
+  pull_request:
+    types: [opened]
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Call AI
+        uses: anthropics/claude-code-action@v1

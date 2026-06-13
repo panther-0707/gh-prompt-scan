@@ -1,12 +1,13 @@
-name: Issue Handler
-on:
-  issue_comment:
-    types: [created]
+name: Tests
+on: [push, pull_request]
+
 jobs:
-  process:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Call AI
-        uses: anthropics/claude-code-action@v1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          prompt: "Summarise this: ${{ github.event.comment.body }}"
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: pytest tests/ -v

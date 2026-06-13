@@ -52,7 +52,7 @@ def parse_workflow(path: Path) -> Workflow | None:
 
         jobs = {}
 
-        for job_name, job_info in content.get("jobs").items():
+        for job_name, job_info in (content.get("jobs") or {}).items():
             job_env = job_info.get("env") or {}
             steps = []
             for step in job_info.get("steps") or []:

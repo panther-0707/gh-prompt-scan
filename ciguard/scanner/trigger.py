@@ -5,7 +5,9 @@ from ciguard.scanner.parser import Workflow
 DIRECT_TRIGGERS = {
     "issues", "issue_comment", "pull_request",
     "pull_request_target", "pull_request_review_comment",
+    "pull_request_review",
     "discussion",
+    "discussion_comment",
 }
 # Safe triggers - only maintainers can fire these:
 SAFE_TRIGGERS = {
