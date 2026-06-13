@@ -1,0 +1,12 @@
+name: Safe TV4
+on:
+  issues:
+    types: [opened]
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Safe step
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: echo "$BODY"

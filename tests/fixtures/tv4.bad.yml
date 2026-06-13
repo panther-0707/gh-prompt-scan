@@ -1,0 +1,10 @@
+name: Vulnerable TV4
+on:
+  issues:
+    types: [opened]
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dangerous step
+        run: echo "${{ github.event.issue.body }}"
