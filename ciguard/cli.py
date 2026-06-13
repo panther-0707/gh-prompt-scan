@@ -8,7 +8,7 @@ from ciguard.scanner.reporter import Reporter
 
 @click.group()
 def main():
-    """CIGI — detect prompt injection in GitHub Actions workflows."""
+    """prompt-shield — detect prompt injection in GitHub Actions workflows."""
     pass
 
 @main.command()
@@ -39,4 +39,4 @@ def scan(path):
 
 @main.command()
 def version():
-    click.echo("CIGI version 0.1.0")
+    click.echo("prompt-shield version 0.1.0")
