@@ -36,7 +36,13 @@ def parse_workflow(path: Path) -> Workflow | None:
             content = yaml.safe_load(file)
         
         name = content.get("name")
-        triggers = content.get(True) or content.get("on")
+        raw_on = content.get(True) or content.get("on") or {}
+        if isinstance(raw_on, str):
+            triggers = {raw_on: None}
+        elif isinstance(raw_on, list):
+            triggers = {t: None for t in raw_on}
+        else:
+            triggers = raw_on
         permissions = content.get("permissions") or {}
 
 
@@ -46,7 +52,7 @@ def parse_workflow(path: Path) -> Workflow | None:
 
         for job_name, job_info in content.get("jobs").items():
             steps = []
-            for step in job_info.get("steps"):
+            for step in job_info.get("steps") or []:
                 steps.append(WorkflowStep(
                     name = step.get("name", ""),
                     run = step.get("run"),
@@ -73,6 +79,7 @@ def parse_workflow(path: Path) -> Workflow | None:
         )
     
 
-    except:
+    except Exception as e:
+        print(f"[warn] could not parse {path}: {e}")
         return None
     

@@ -1,4 +1,5 @@
 import click
+import sys
 from ciguard.scanner.loader import find_workflows
 from ciguard.scanner.parser import parse_workflow
 from ciguard.scanner.taint import analyse_workflow
@@ -27,10 +28,13 @@ def scan(path):
         if workflow:
             findings = analyse_workflow(workflow)
             all_findings.extend(findings)
-        
 
     reporter = Reporter(all_findings)
     click.echo(reporter.to_text())
+
+    if all_findings:
+        sys.exit(1)
+
 
 @main.command()
 def version():

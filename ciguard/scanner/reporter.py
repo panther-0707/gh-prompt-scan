@@ -10,7 +10,7 @@ class Reporter:
         
         lines = []
         for find in self.findings:
-            lines.append(f"[{find.severity}] {find.threat_vector} - {find.file_path} line {find.line}")
+            lines.append(f"[{find.severity}] {find.threat_vector} - {find.file_path} step {find.step_index}")
             lines.append(f"Message: {find.message}")
             lines.append(f"Fix: {find.fix}")
             lines.append("")
@@ -27,11 +27,11 @@ class Reporter:
             "",
             f"Found **{len(self.findings)} issue(s)**",
             "",
-            "| Severity | Threat Vector | File | Line | Message |",
+            "| Severity | Threat Vector | File | step | Message |",
             "|----------|--------------|------|------|---------|",
         ]
 
         for find in self.findings:
-            lines.append(f"| {find.severity} | {find.threat_vector} | `{find.file_path}` | {find.line} | {find.message} |")
+            lines.append(f"| {find.severity} | {find.threat_vector} | `{find.file_path}` | {find.step_index} | {find.message} |")
         
         return "\n".join(lines)

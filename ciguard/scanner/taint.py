@@ -10,15 +10,22 @@ ATTACKER_SOURCES = [
     "github.event.pull_request.title",
     "github.event.pull_request.body",
     "github.event.pull_request.head.ref",
+    "github.event.pull_request.head.label",
+    "github.event.review.body",
+    "github.event.discussion.title",
+    "github.event.discussion.body",
+    "github.event.head_commit.message",
+    "github.head_ref",
 ]
 
+GUARD_TOKENS = ("github.actor", "github.triggering_actor", "author_association")
 
 @dataclass
 class Finding:
     threat_vector: str
     severity: str
     file_path: str
-    line: int
+    step_index: int
     message: str
     fix: str
 
@@ -31,6 +38,9 @@ def analyse_workflow(workflow: Workflow) -> list[Finding]:
     for job_name, job in workflow.jobs.items():
         ai_received_tainted_input = False
 
+        job_guarded = bool(job.if_condition) and any(t in str(job.if_condition) for t in GUARD_TOKENS)
+
+
         for i, step in enumerate(job.steps):
 
             #TV 4
@@ -41,7 +51,7 @@ def analyse_workflow(workflow: Workflow) -> list[Finding]:
                             threat_vector = "TV4",
                             severity = "CRITICAL",
                             file_path = str(workflow.path),
-                            line = i,
+                            step_index = i,
                             message = f"Attacker controlled '{source}' which was found directly in run: command",
                             fix="Pass untrusted values via env: variables instead of ${{ }} in run: blocks",
                         ))
@@ -58,7 +68,7 @@ def analyse_workflow(workflow: Workflow) -> list[Finding]:
                         threat_vector = "TV5",
                         severity = "CRITICAL",
                         file_path = str(workflow.path),
-                        line = i,
+                        step_index = i,
                         message = "AI step received attacker input, and its output flows into a shell command",
                         fix="Never pass AI output directly into shell commands, validate AI output first.",
                     ))
@@ -66,31 +76,27 @@ def analyse_workflow(workflow: Workflow) -> list[Finding]:
             # TV 6
             if step.uses and "actions/checkout" in step.uses:
                 ref = str(step.with_inputs.get("ref", ""))
-                if "pull_request.head" in ref and "pull_request_target" in str(workflow.triggers):
+                if ("pull_request.head" in ref or "head_ref" in ref) and "pull_request_target" in str(workflow.triggers):
                     findings.append(Finding(
                         threat_vector = "TV6",
                         severity = "CRITICAL",
                         file_path = str(workflow.path),
-                        line = i,
+                        step_index = i,
                         message = "Workflow uses pull_request_target and checks out PR head - attacker controls the workspace files fed to AI",
                         fix = "Do not check out PR head code in pull_request_target workflows. Use pull_request trigger instead.",
                     ))
             
             #TV 7
             if is_ai_step(step):
-                # check if there's no actor guard
-                has_guard = False
-                if step.if_condition and "github.actor" in step.if_condition:
-                    has_guard = True
-                if not has_guard:
+                step_guarded = bool(step.if_condition) and any(t in str(step.if_condition) for t in GUARD_TOKENS)
+                if not (job_guarded or step_guarded):
                     findings.append(Finding(
                         threat_vector="TV7",
                         severity="MEDIUM",
-                        file_path = str(workflow.path),
-                        line = i,
+                        file_path=str(workflow.path),
+                        step_index=i,
                         message="AI step is reachable by any external user with no actor guard - attacker can repeatedly trigger this workflow to exhaust your AI API quota",
                         fix="Add an if condition to restrict who can trigger AI steps. Example: if: github.actor == 'trusted-bot' or check author_association",
                     ))
-
 
     return findings
