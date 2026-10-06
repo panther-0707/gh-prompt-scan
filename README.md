@@ -1,12 +1,31 @@
 # gh-prompt-scan
 
+![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)
+
 **A static analyzer that finds prompt-injection and related vulnerabilities in AI-integrated GitHub Actions workflows.**
 
 gh-prompt-scan scans the workflow YAML in a repository's `.github/workflows/` directory and flags patterns where untrusted, attacker-controlled input can reach a shell command, an AI agent, or the runner — the class of bugs behind "pwn request" and prompt-injection attacks in CI pipelines.
 
-It is designed to run as a CI gate: it exits non-zero when it finds issues, so a build can fail on a vulnerable workflow.
+It is designed to run as a CI gate: it exits non-zero when it finds issues, so a build can fail on a vulnerable workflow. It ships as a Python CLI (`pip install gh-prompt-scan`) and as a reusable GitHub Action.
 
 > gh-prompt-scan is a linter for common dangerous patterns, **not** a proof of safety. A clean report does not guarantee a workflow is secure. See [Limitations](#limitations).
+
+---
+
+## Quick start
+
+```bash
+pip install gh-prompt-scan
+gh-prompt-scan scan --path .
+```
+
+Or drop it into your CI as a GitHub Action:
+
+```yaml
+- uses: actions/checkout@v4
+- uses: panther-0707/gh-prompt-scan@v1
+```
 
 ---
 
@@ -35,6 +54,14 @@ Severity reflects impact: CRITICAL findings can lead to code execution or secret
 
 Requires **Python 3.10+**.
 
+### From PyPI
+
+```bash
+pip install gh-prompt-scan
+```
+
+### From source
+
 ```bash
 git clone https://github.com/panther-0707/gh-prompt-scan.git
 cd gh-prompt-scan
@@ -43,7 +70,7 @@ source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -e .
 ```
 
-This installs the `gh-prompt-scan` command (via `[project.scripts]` in `pyproject.toml`). Dependencies: `pyyaml`, `click`.
+Either way, this installs the `gh-prompt-scan` command (via `[project.scripts]` in `pyproject.toml`). Dependencies: `pyyaml`, `click`.
 
 ---
 
@@ -89,7 +116,33 @@ Fix: Pass untrusted values via env: variables instead of ${{ }} in run: blocks
 
 ## Running gh-prompt-scan in CI
 
-Add a workflow that runs gh-prompt-scan on every push and pull request. Because the scan only reads your workflow files, run it on the safe `pull_request` trigger:
+### As a GitHub Action
+
+The simplest way to gate your workflows. Because the scan only reads your workflow files, run it on the safe `pull_request` trigger:
+
+```yaml
+name: gh-prompt-scan
+on: [push, pull_request]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: panther-0707/gh-prompt-scan@v1
+        with:
+          path: .
+```
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `path` | `.` | Path to the repository to scan |
+
+The step fails the job if gh-prompt-scan reports any findings.
+
+### Via pip
+
+If you'd rather install the CLI yourself:
 
 ```yaml
 name: gh-prompt-scan
@@ -103,11 +156,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e .
+      - run: pip install gh-prompt-scan
       - run: gh-prompt-scan scan --path .
 ```
-
-The job fails automatically if gh-prompt-scan reports any findings.
 
 ---
 
@@ -143,6 +194,7 @@ Treat gh-prompt-scan's output as a prompt to review a workflow by hand, not as a
 Run the test suite:
 
 ```bash
+pip install -e .
 pytest -v
 ```
 
